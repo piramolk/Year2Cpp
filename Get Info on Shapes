@@ -1,0 +1,153 @@
+#include <iostream>
+#include <string>
+
+using namespace std;
+
+class Shape
+{
+	private:
+	int x;
+	int y;
+	double area;
+	double perimeter;
+	
+	public:
+	Shape(){x=0;y=0;}
+	Shape(int x_in, int y_in){x=x_in;y=y_in;}
+	virtual double getArea();
+	virtual double getPerimeter();
+
+};
+
+double Shape::getArea()
+{
+	double area = x*y;
+	return area;
+}
+
+double Shape::getPerimeter()
+{
+	double perimeter=2*x +2*y;
+	return perimeter;
+}
+
+class Rectangle:public Shape
+{
+	private:
+	int w;
+	int h;
+	double area;
+	double perimeter;
+	
+	public:
+	Rectangle();
+	Rectangle(int x_in, int y_in, int w_in ,int h_in);
+	double getArea();
+	double getPerimeter();
+};
+
+
+Rectangle::Rectangle():Shape() //default constr
+{
+	w=0;
+	h=0;
+}
+
+Rectangle::Rectangle(int x_in, int y_in, int w_in ,int h_in):Shape()
+{
+	w=w_in;
+	h=h_in;
+}
+
+double Rectangle::getArea()
+{
+	int area;
+	area=w*h;
+	return area;
+}
+
+double Rectangle::getPerimeter()
+{
+	int perimeter;
+	perimeter=2*w+2*h;
+	return perimeter;
+
+}
+
+class Circle:public Shape
+{
+	private:
+	int r;
+	double area;
+	double perimeter;
+	
+	public:
+	Circle();
+	Circle(int x_in, int y_in, int r_in);
+	double getArea(); 
+	double getPerimeter();
+	
+};
+
+Circle::Circle():Shape()  //default const
+{
+	r=0;
+}
+
+Circle::Circle(int x_in, int y_in, int r_in):Shape()
+{
+	r=r_in;
+}
+
+double Circle::getArea()
+{
+	double area;
+	area= 3.14*r*r ;
+	return area;
+}
+
+double Circle::getPerimeter()
+{
+	double perimeter;
+	perimeter=2*3.14*r;
+	return perimeter;
+	
+}
+
+int main()
+{
+	Shape* p_shape;
+	Rectangle shape1(1,2,15,10);
+	Circle shape2(3,2,10);
+	cout<< "shape 1 area: " << shape1.getArea() <<endl;
+	cout<< "shape 1 perimeter: " << shape1.getPerimeter() <<endl;
+	cout<< "shape 2 area: " << shape2.getArea() <<endl;
+	cout<< "shape 2 perimeter: " << shape2.getPerimeter() <<endl;
+	p_shape = &shape1;
+	cout<< "shape 1 area: " << p_shape->getArea() <<endl;
+	cout<< "shape 1 perimeter: " << p_shape->getPerimeter() <<endl;
+	p_shape = &shape2;
+	cout<< "shape 2 area: " << p_shape->getArea() <<endl;
+	cout<< "shape 2 perimeter: " << p_shape->getPerimeter() <<endl;
+	return 0;
+}
+
+
+
+
+
+
+/*
+expected output
+
+shape 1 area: 150 --> 15*10,   -->int
+shape 1 perimeter: 50			--> int
+shape 2 area: 314  				--int
+shape 2 perimeter: 62.8   -->doube
+shape 1 area: 150       --Int
+shape 1 perimeter: 50		--int
+shape 2 area: 314			-int
+shape 2 perimeter: 62.8		double
+
+shape 2 perimeter==double 
+*/
