@@ -1,0 +1,108 @@
+#include <string>
+#include <iostream>
+#include <vector>
+
+using namespace std;
+
+struct Data
+{
+	int num;
+	string str;
+};
+
+
+void printboard(vector< vector<Data> > board);
+void addrow(vector< vector<Data> >* board);
+void addcolumn(vector< vector<Data> >* board);
+
+int main()
+{
+//initialise the vector board
+Data temp_data;
+vector< vector<Data> > board;
+
+for(int i=0; i<3; i++)
+{
+	vector<Data> row;
+	for( int j=0; j<2; j++)
+	{
+		temp_data.num = j+1; 
+		temp_data.str = "_____";
+		
+		row.push_back(temp_data);
+	}
+	board.push_back(row);
+}
+printboard(board);
+
+addcolumn(&board);
+addrow(&board);
+printboard(board);
+
+return 0;
+
+
+}
+
+
+void printboard(vector< vector<Data> > board)
+{
+	int M= board.size();
+	int N=0;
+	if(M>0)
+	{
+		N= board[0].size();
+	}
+	cout<<"rows: "<< M<<endl;
+	cout<<"columns: "<< N <<endl;
+
+	for(int i=0; i<M; i++)
+	{
+		for( int j=0; j<N; j++)
+		{
+		 cout<< board[i][j].num << "  " <<board[i][j].str <<'\t';
+		}
+		 cout<<endl; //put here outside col loop
+	}
+
+}
+
+
+void addcolumn(vector< vector<Data> >* board)
+{
+	int M= board->size();
+	int N=0;
+	if(M>0)
+	{
+		N=(*board)[0].size();
+	}
+	Data temp_data;
+	for(int i=0; i< M; i++)
+	{
+		temp_data.num = i+1;
+		temp_data.str = "____";
+			
+		(*board)[i].push_back(temp_data);
+	}
+
+}
+
+void addrow(vector< vector<Data> >* board)
+{
+	int M= board->size();
+	int N=0;
+	if(M>0)
+	{
+		N=(*board)[0].size();
+	}
+	vector<Data> row;
+	Data temp_data;
+	for(int i=0; i< N; i++)
+	{
+		temp_data.num = i+1;
+		temp_data.str = "____";
+			
+		row.push_back(temp_data);
+	}
+	board->push_back(row);
+}
