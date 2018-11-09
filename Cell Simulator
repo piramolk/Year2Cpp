@@ -1,0 +1,354 @@
+#include <iostream>
+#include <string>
+#include <cstdlib>
+#include <vector>
+#include<time.h>
+using namespace std;
+
+class Cell 
+{   friend class Board;
+	private:
+	bool living;
+	char c;
+	int count;
+	vector< vector<int> > nnum; 
+
+
+	public:
+		Cell();
+		~Cell(){} //destructor 
+		void cellprint();
+		char cellstate();
+		bool det_live();              //determinees if it is living
+		void setlive(bool status);  //sets the cell to alive
+		void neighborstats(int n);
+		int getcount();
+		void addcount(){ count++;};
+		int ret_count(){return count;};
+		void resetcount();
+};
+
+
+Cell::Cell()
+{
+	living=false;   //default constructor, cell is dead
+	count=0;
+}
+
+void Cell::cellprint()  
+{
+	if(living == true)  //if cell is alive, will be denoted by 'O'
+	{
+		cout<<'O'; 
+	}
+	else
+	{
+		cout<<' ';
+	}
+}
+
+char Cell::cellstate()  //return of the character allows for effective comparison of contents between cells
+{
+	if(living == true)  //if cell is alive, will be denoted by 'O'
+	{ 
+		c='O';
+		return c;
+	}
+	else
+	{
+		c=' ';
+		return c;
+	}
+}
+
+bool Cell::det_live() //returns the state of the cell, living, which may either be true(alive) or false(dead).
+{
+		return living;
+}
+
+void Cell::setlive(bool status) //the cell's state will now be whatever that is within the brackets, true for alive, false for dead
+{
+		living=status;  //cell will now have a living status
+}
+
+
+void Cell::neighborstats(int n) //stores the count number
+{
+	count=n;		
+}
+int Cell::getcount() //allows count, the number of neighbors to be accessible
+{
+	return count; 
+	
+}			
+void Cell::resetcount()
+{
+	count=0;
+}
+
+class Board
+{
+private:
+	int rownum;
+	int colnum;
+	int time;  	
+	int neighnum;
+	int cellnumber;
+	vector< vector<Cell> > array;
+	
+
+public:
+	Board();
+	Board(int r, int co);
+	~Board(){};
+	void populate( int confl_num);
+	int clock();
+	void print();
+	
+	int getrow() {return rownum;};
+	int getcol() {return colnum;};
+	void getneighbors();
+	void newstate();
+	int num_cells(); 	
+};
+
+	
+Board::Board() //constructor
+{
+	rownum = 0;
+	colnum = 0;
+	time=0;
+	neighnum=0; 
+	cellnumber=0;
+}
+
+Board::Board(int r, int co)  //fills the array with default empty spaces as well 
+{
+	rownum = r;
+	colnum = co;
+	vector<Cell> vectemp;
+	Cell luka;
+	for (int i = 0; i<20; i++)
+	{
+		for (int j = 0; j<75; j++)
+		{
+			vectemp.push_back(luka);
+		}
+		array.push_back(vectemp); //array fully initialized here
+	}	
+}
+
+void Board::populate(int confl_num) //randomizes the positions, does it so it fills x% of the board THISIS OK
+{
+	int a;
+	int bit=0;
+	time=0;
+	a = confl_num*15;
+	int x,z; 
+	srand(1);
+		  //number of bits relate to how much of the board is filled
+		for (int bit = 0; bit< a ; bit++) //number of bits relate to how much of the board is filled
+		{ 
+			do{
+					x = rand() % 20;
+					z = rand() % 75;
+					
+				}while(array[x][z].det_live() ==true);
+				array[x][z].setlive(true);
+			}
+	// cout<< "time: "<< time <<endl;
+	// cout<<"number of cells:"<< num_cells()<<endl;
+}
+
+
+void Board::print() //prints the array
+{
+		for (int i = 0; i<rownum; i++)
+		  {
+		   for (int j = 0; j<colnum; j++)
+		    { 
+			  array[i][j].cellprint();  //cellprint just out puts what is inside, c, 
+			      }
+				  cout << endl;
+		  }  
+}
+
+int Board::clock() //increments time variable
+{	
+	time++;
+	return time;
+}
+
+
+void Board::getneighbors()// adds to count(the number of neighbors) if present
+{
+	
+rownum=20;
+colnum=75;
+
+for(int x=0; x<rownum; x++)
+	{
+		for(int y=0; y<colnum; y++)
+		{
+			array[x][y].resetcount();
+				if(x>0)
+				{
+					if(array[x-1][y].det_live()) //for the cell that is adjacent left
+					{
+						array[x][y].addcount();
+					}
+				}
+			
+				if(x+1<rownum) 
+				{
+					if(array[x+1][y].det_live()) //for the cell that is adjacent right
+					{
+						array[x][y].addcount();
+					}
+				}
+				if(y>0)
+				{
+					if(array[x][y-1].det_live()) //for the cell that is above
+					{
+						array[x][y].addcount();
+					}
+				}
+
+				if(y+1<colnum) 
+				{
+					if(array[x][y+1].det_live()) //for the cell that is below
+					{
+						array[x][y].addcount();
+					}
+				}
+				
+				if(x>0&&y>0)  //for non edges
+				{
+					if(array[x-1][y-1].det_live())  ////for the cell that is diagonal up, covers the edges
+					{
+						array[x][y].addcount();
+					}
+				}
+				
+				if((x>0)&&(y+1<colnum)) //for the last column
+				{
+					if(array[x-1][y+1].det_live()) //for the cell that is diagonal down
+					{
+						array[x][y].addcount();
+					}
+				}
+				if((x+1<rownum)&&(y>0))  //for the last row
+				{
+					if(array[x+1][y-1].det_live()) 
+					{
+						array[x][y].addcount();
+					}
+				}
+				if((x+1<rownum)&&(y+1<colnum))  //diagonal down
+				{
+					if(array[x+1][y+1].det_live()) 
+					{
+						array[x][y].addcount();
+					}
+				}
+		}		
+				
+	}
+}
+		
+
+int Board::num_cells() 
+{
+
+	cellnumber = 0;
+	rownum=20;
+	colnum=75;
+		for(int a = 0; a < rownum; a++) 
+		{
+			for(int b = 0; b < colnum; b ++) 
+			{
+				if(array[a][b].det_live()==true) //so long as cell is alive
+				{
+					cellnumber++;
+				}
+			}
+		}
+	return cellnumber;
+}
+
+
+void Board::newstate()
+{
+	int countnum;
+	rownum=20;
+	colnum=75;
+	getneighbors();
+	
+for(int x=0; x<rownum; x++)
+	{
+		for(int y=0; y<colnum; y++)
+		{
+			countnum=array[x][y].ret_count(); //gets the number of neighbors from each element
+			if(countnum<=1&& (array[x][y].det_live()==true))  //for cells that are alive
+			{ 
+				array[x][y].setlive(false);  //they die of loneliness
+			}				
+			else if(countnum>=4&&(array[x][y].det_live()==true))  //alive cells
+			{
+				array[x][y].setlive(false); //die from overpopulation
+			}
+			else if(countnum==3&&(array[x][y].det_live()==false)) //dead cells
+			{
+				array[x][y].setlive(true); //BIRTH
+			}	
+			
+		}
+	}
+}
+
+
+int main()
+{
+	int selection = 0;
+	int confl_num = 0;
+	int	key;
+	Board b1(20,75);
+	string trash;
+	system("cls");
+	cout << "Welcome to the cell simulator" << endl;
+	cout << endl;
+	cout << "Select your cell type: (1) normal cells or (2) cancer cells" << endl;
+	while ( (selection < 1) || (selection > 2))
+	{
+		cout << ">";
+		cin >> selection;
+	}
+	
+	getline(cin,trash);
+	cout << "Select the confluence percentage (%)" << endl;
+	while ( (confl_num <= 0) || (confl_num > 100))
+	{
+		cout << ">";
+		cin >> confl_num;
+	}
+	
+	getline(cin,trash);
+	b1.populate(confl_num);
+	cout << "time: " << b1.clock() << endl;
+	cout<<"number of cells:"<<b1.num_cells()<<endl;
+	b1.print();
+	
+	key=cin.get();
+	while(key!='q')
+	{			
+		system("cls");
+	
+		cout << "time: " << b1.clock() << endl;
+		cout<<"number of cells:"<<b1.num_cells()<<endl;
+		b1.print();	
+		b1.newstate();
+		key = cin.get();
+	}
+	return 0;
+
+}
