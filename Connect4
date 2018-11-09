@@ -1,0 +1,171 @@
+#include <iostream>
+#include <string>
+using namespace std;
+const int rownumber = 6;
+const int colnumber = 7;
+int colselect;
+char board[rownumber][colnumber];
+void newboard(string player);
+bool wincheck();
+void initialise();
+void printboard();
+string toggle(string player);
+
+
+int main()
+{
+    string player = "Player 2"; //Starts with Player 2 as toggle will switch it to Player 1 for round 1
+    initialise();
+    cout << "Connect Four Game" << endl;
+    printboard();
+    while (wincheck() == false)
+    {
+        player = toggle(player);
+        newboard(player);
+        printboard();
+    }
+    if (wincheck() == true)
+    {
+        cout <<"Great job "<< player << "! You connected 4 and have emerged victorious!" << endl;
+    }
+    
+    return 0;
+}
+
+void newboard(string player) //prints the new board for the next player, ensures that player 1 outputs O and player 2 outputs X
+
+{
+    int colselect;
+    cout << player << ",  please enter a column:" << endl;
+    cin >> colselect;
+    colselect = colselect - 1;
+    while (((colselect < 0) || (colselect > colnumber)) || (board[0][colselect] != ' ')) //for not in range and column is full
+    {
+        cout << " Please enter a column number from 1 to " << colnumber << " that is not full" << endl;
+        cin >> colselect;
+        colselect = colselect - 1;
+    }
+    for (int i = rownumber; i >= 0; i--)  //this  loop differentiates between Player 1 and 2 so Player 1 is represented by O, 2 by X
+    {
+        if (board[i][colselect] == ' ')
+        {
+            if (player == "Player 1")
+            {
+                board[i][colselect] = 'O';
+                return;
+            }
+            board[i][colselect] = 'X';
+            return;
+        }
+    }
+}
+
+void initialise() //initialises the board
+{
+    for (int z = 0; z < rownumber; z++)
+    {
+        for (int y = 0; y < colnumber; y++)
+        {
+            board[z][y] = ' ';
+        }
+    }
+}
+
+bool wincheck() //this function checks to see if anyone has won yet
+
+{
+    //checking for verticals: checks if input in the rows below match, if so, returns true
+    for (int z = rownumber; z > rownumber-4 ; --z) //these boundaries ensure that the last row checked will never be out offgrid
+    {
+        for(int y=0; y < colnumber; y++)  //the column to be checked will likewise not be offgrid
+        {
+            if ((board[z][y] == 'X') && (board[z - 1][y] == 'X') && (board[z - 2][y] == 'X') && (board[z - 3][y] == 'X'))
+            {
+                return true;
+            }
+            else if ((board[z][y] == 'O') && (board[z - 1][y] == 'O') && (board[z - 2][y] == 'O') && (board[z-3][y] == 'O'))
+            {
+                return true;
+            }
+        }
+    }
+    
+    //checking for diagonals, downwards and right : row and column are both incremented. Boundaries ensure doesn't go off-grid
+    for (int z1 = 0; z1 < 3; z1++)
+        //the row number to be checked here does not go beyond 3 as there is an increment of +3, as such, this is to ensure the function does not check beyond the board
+    {
+        for(int y1=0;y1<(colnumber-2);y1++)
+        {
+            if ((board[z1][y1] == 'X') && (board[z1 + 1][y1 + 1] == 'X') && (board[z1 + 2][y1 + 2] == 'X') && (board[z1 + 3][y1 + 3] == 'X'))
+            {
+                return true;
+            }
+            else if ((board[z1][y1] == 'O') && (board[z1 + 1][y1 + 1] == 'O') && (board[z1 + 2][y1 + 2] == 'O') && (board[z1 + 3][y1 + 3] == 'O'))
+            {
+                return true;
+            }
+        }
+    }
+    
+    //Checking diagonals upwards and right: starts from the bottom so row decrements but column increments
+    // boundaries here ensure that the maximum row and column checked will not exceed the board dimensions
+    for (int z2 = rownumber ; z2 > rownumber-4; --z2)
+    {
+        for(int y2=0; y2 < colnumber-2 ; y2++ )
+        {   if ((board[z2][y2] == 'X') && (board[z2-1][y2+1] == 'X') && (board[z2 - 2][y2 + 2] == 'X') && (board[z2 - 3][y2 + 3] == 'X'))
+        {
+            return true;
+        }
+        else if ((board[z2][y2] == 'O') && (board[z2 - 1][y2 + 1] == 'O') && (board[z2 - 2][y2 + 2] == 'O') && (board[z2 - 3][y2 + 3] == 'O'))
+        {
+            return true;
+        }
+        }
+    }
+    
+    //checking horizontals: to ensure that it doesn't go off grid, the column number has a maximum of colnumber-3
+    // the upper limit of y3 is such that the function will not check a location off the board
+    for (int z3 = 0; z3 < rownumber ; z3++)
+    {
+        for (int y3 = 0; y3< colnumber-3 ; y3++)
+        {
+            if ((board[z3][y3] == 'X') && (board[z3][y3 + 1] == 'X') && (board[z3][y3 + 2] == 'X') && (board[z3][y3 + 3] == 'X'))
+            {
+                return true;
+            }
+            else if ((board[z3][y3] == 'O') && (board[z3][y3 + 1] == 'O') && (board[z3][y3 + 2] == 'O') && (board[z3][y3 + 3] == 'O'))
+            {
+                return true;
+            }
+        }
+    }
+    return false ;
+    
+}
+
+
+void printboard() //prints the board
+
+{
+    cout << " 1 2 3 4 5 6 7" << endl;
+    for (int z = 0; z<rownumber; z++)
+    {
+        for (int y = 0; y<colnumber; y++)
+        {
+            cout << "|"; // these lines act as the vertical gridlines of the board
+            cout << board[z][y];
+        }
+        cout << "|" << endl;
+        cout << "---------------" << endl;
+    }
+}
+
+string toggle(string player)  //changes from player 1 to player 2
+{
+    if (player == "Player 1") //so when the function starts with Player 2, this function automatically returns Player 1, thereby switching the players
+    {
+        return "Player 2";
+    }
+    return "Player 1";
+    
+}
