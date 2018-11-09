@@ -1,0 +1,460 @@
+#include <fstream>
+#include <iostream>
+#include <vector>
+#include <string>
+#include <stdlib.h>
+#include <algorithm>
+#include <sstream>
+
+using namespace std;
+
+struct prot_details{	
+	string gi_id, ref_id,prot_name, prot_seq;  //prot_seq refers to the sequence
+    int item_id;
+};
+void selectfile (ifstream& mystream);
+void main_menu(); 
+void print_submenu();
+void build_array(ifstream& mystream, vector<prot_details>& p_table);
+void amino_table(ifstream& mystream, vector<prot_details>& p_table); 
+void amino_count(vector<prot_details>& p_table,int nPosition);
+int sub_pathitem(vector<prot_details>& p_table, int sel_item,int& nPosition);
+int sub_pathgi(vector<prot_details>& p_table, string& sel_gi,int& nPosition);
+int sub_pathref(vector<prot_details>& p_table, string& sel_ref,int& nPosition);
+void sub_pathend(vector<prot_details>& p_table, int nPosition);
+void print_table(vector<prot_details>& table);
+void keyword_search(vector<prot_details>& p_table,int nPosition);
+//string to_string(int value);
+
+int main()
+{
+    ifstream mystream;
+    selectfile(mystream);               //file is returned and can be accessed
+    vector<prot_details> backbone;  
+    build_array(mystream, backbone);        
+    int main_option;
+    bool menu_repeat=1;
+    do 
+	{ 
+		main_menu();                            //displays main menu
+		cin >> main_option;                     //chooses the option
+		string sel_gi,sel_ref;                   //selected gi number and selected ref number
+		int sel_item, nPosition;						//nposition is the position of the protein in the vector
+		 
+	 
+		switch(main_option)             //main menu decision tree
+				{
+					case 1:                                         //overview of database
+						amino_table(mystream, backbone); 
+						break;
+					case 2:                                          //sort by protein number
+						cout<< "Enter a protein number"<<endl; 
+						cin>> sel_item;
+						print_submenu();        
+						sub_pathitem(backbone,sel_item, nPosition);       //pathways are dependent on the type of identifier
+						sub_pathend(backbone, nPosition);
+						break;
+					case 3:    
+						cout<< "Enter a gi id"<<endl; 
+						cin>> sel_gi;                                        //sort by gi id
+						print_submenu();
+						sub_pathgi(backbone, sel_gi, nPosition);
+						sub_pathend(backbone, nPosition);
+						break;
+					case 4:
+						cout<< "Enter a ref id"<<endl;        //sortby ref id
+						cin>> sel_ref;                                                
+						print_submenu();
+						sub_pathref(backbone, sel_ref, nPosition);
+						sub_pathend(backbone, nPosition);
+						break ;
+					case 5:  
+						keyword_search( backbone, nPosition);		//search by keyword
+						break;
+					case 6:
+						menu_repeat=0; 
+					default:
+						break;
+				}
+	}while(menu_repeat==1);      //ensures that user does not exit program prematurely
+}
+
+void selectfile (ifstream& mystream)  //mystream is the data stream from the file   
+{
+    int file_choice;
+    cout<< "Welcome to the Protein Database"<<endl;
+    cout << "Select an option from the menu below" << endl;
+    cout<<"1) Load the abridged protein data"<< endl;
+    cout<<"2) Load the complete protein data"<<endl;
+    cout<<"3) Quit database"<<endl;
+    cin >> file_choice;
+    switch(file_choice)
+    	{
+    	case 1:
+   			mystream.open("protein_a.fa");
+   			break;
+   		case 2:
+   			mystream.open("protein_c.fa");
+   			break;
+   		case 3:
+   			abort();
+   		 }
+}
+
+
+void main_menu() //displays the options on the main
+{
+	cout<< "Select an option from the menu below"<< endl;
+    cout<< "1) Overview of the database"<< endl;
+    cout<< "2) Search by protein number"<< endl;
+    cout<< "3) Search by gi number"<< endl;
+    cout<< "4) Search by ref number"<<  endl;
+    cout<< "5) Search by keyword"<< endl;
+    cout<< "6) Quit program" <<  endl;
+    
+}
+
+void build_array(ifstream& mystream, vector<prot_details>& p_table) //adds the proteins to the vector 
+{   
+    string identifier1, identifier2;
+    prot_details protein;
+    int i = 1;
+    while(!mystream.eof())
+        {
+            getline(mystream, identifier1 , '|');             //cuts out 'gi'         
+            getline(mystream, protein.gi_id, '|');            //cuts out gi id and allocates it to struct prot details 
+            getline(mystream, identifier2, '|');             //cuts out 'ref'
+            getline(mystream, protein.ref_id, '|');            //gets ref id and allocates to struct prot details
+            getline(mystream, protein.prot_name, ']');				
+            getline(mystream, protein.prot_seq, '>' );            //placed at end to ensure it doesn't just end at first '>'
+            protein.item_id = i;
+            i++;
+        	p_table.push_back(protein);                          
+        }
+    //p_table.pop_back();
+    mystream.close(); 
+    return;
+}
+  
+void amino_table(ifstream& mystream, vector<prot_details>& p_table)            //prints out the overview of the database, this is ok, the size is correct
+{
+	build_array(mystream, p_table);  //builds the p_table (ノ°▽°)ノ︵┻━┻ 
+    cout<< "The total number of proteins is: " << p_table.size() << endl;
+	cout<< "Amino acids are represented by the following characters:"<< endl;
+    
+    string p_amino[13][2] =
+    {
+        {"A alanine", "P proline" },
+        {"B aspartate/asparagine", "Q glutamine"},
+        {"C cystine", "R arginine"},
+        {"D aspartate", "S serine"},
+        {"E glutamate", "T threonine"},
+        {"F phenylalanine","U selenocysteine "},
+        {"G glycine", "V valine" },
+        {"H histidine", "W tryptophan" },
+        {"I isoleucine", "Y tyrosine "  },
+        {"K lysine", "Z glutamate/glutamine "},
+        {"L leucine", "X any "},
+        {"M methionine", "* translation stop" },
+        {"N asparagine", "- gap of indeterminate length"}
+    };
+   for (int i = 0; i < 13; i++){
+		cout<< p_amino[i][0] << " " << p_amino[i][1] << endl;
+	}
+	return;
+}
+  
+void print_submenu()
+{    
+	cout<< "Select an option from the menu below"<<endl;
+    cout<<"1) Description of the protein"<<endl;
+    cout<< "2) Protein sequence "<<endl;
+    cout<< "3) Protein statistics #"<<endl;
+    cout<< "4) Record protein to file" <<endl;
+    cout<< "5) Return to main menu" <<endl;
+
+}
+
+
+int sub_pathitem(vector<prot_details>& p_table, int sel_item, int& nPosition) 
+{	
+        int j=0;
+		bool found = 0;
+		while(!found)
+		{	
+			if(p_table[j].item_id == sel_item)           //when there is a match, the loop ends 
+			{
+				found = 1;
+				nPosition = j;                        //the location of the match is thus determined
+			}
+			else
+			{
+				j++; 
+			}
+		}
+       return nPosition;	
+	
+}
+
+int sub_pathgi(vector<prot_details>& p_table, string& sel_gi, int& nPosition) 
+{		
+        	bool found = 0;
+        	int i = 0;
+        	while(!found)
+        	{
+        		if(p_table[i].gi_id == sel_gi)
+        		{
+        			found = 1;
+        			nPosition = i;
+        		}
+        		i++;
+        	}	
+	return nPosition;
+}
+
+int sub_pathref(vector<prot_details>& p_table, string& sel_ref, int& nPosition) 
+{
+        	bool found = 0;
+        	int i = 0;
+        	while(!found)
+        	{
+        		if(p_table[i].ref_id == sel_ref)
+        		{
+        			found = 1;
+        			nPosition = i;
+        		}
+        		i++;
+        	}
+	return nPosition;
+}
+//they just friggin work (๑•̀ㅂ•́)و✧
+
+void sub_pathend(vector<prot_details>& p_table, int nPosition) 
+{
+		int sub_choice;
+		cin>> sub_choice;
+		
+		switch(sub_choice)
+			{
+				case 1:      //description of protein       	
+					cout<< "Description of the protein:" <<endl;
+					cout<< "item id: "<< p_table[nPosition].item_id<<endl;   //i outputted these in an earlier function and it outputs ok
+					cout<< "gi id: "<< p_table[nPosition].gi_id<< endl;
+					cout<< "ref id: "<< p_table[nPosition].ref_id<<endl;
+					cout<< "name: "<< p_table[nPosition].prot_name<< "]" <<endl;
+					break;
+					
+				case 2:   //protein sequence
+					cout<< "Protein sequence: " << p_table[nPosition].prot_seq<< endl; 
+					break;
+					
+				case 3:  //protein statistics
+					amino_count( p_table, nPosition);
+					break;
+					
+				case 4: //record protein to file
+					{
+						ofstream out_file;
+						out_file.open ("protein.txt");
+						out_file << "item id: "<<p_table[nPosition].item_id<<endl;
+						out_file << "gi id: "<< p_table[nPosition].gi_id<<endl;
+						out_file <<  "ref id: "<< p_table[nPosition].ref_id<<endl;
+						out_file <<"name: "<< p_table[nPosition].prot_name<< "]"<< endl;
+						out_file << "Protein sequence: "<< p_table[nPosition].prot_seq<<endl; 
+						out_file.close();
+						cout<<"The protein was written to file"<<endl;
+						break;
+					}
+					
+				case 5:  //return to main menu
+					break;
+			} 
+
+}
+
+void amino_count(vector<prot_details>& p_table,int nPosition){ 
+	cout<< "Report on the protein statistics:" <<endl;
+
+	int La=0, Lb=0, Lc=0, Ld=0, Le=0, Lf=0, Lg=0, Lh=0;
+	int Li=0, Lj=0, Lk=0, Ll=0, Lm=0, Ln=0, Lo=0, Lp=0;
+	int Lq=0, Lr=0, Ls=0, Lt=0, Lu=0, Lv=0, Lw=0, Lx=0, Ly=0, Lz=0;
+	int star=0, dash=0;
+	string amino_chain;
+	amino_chain= p_table[nPosition].prot_seq; 
+	int maxlength; 
+	maxlength=  amino_chain.length();
+	cout<< "Total number of amino acids: " << maxlength << endl; 
+	for(int i=0; i< maxlength; i++)
+		{
+				switch(amino_chain[i])         // i'm sorry I resorted to this (oT-T)尸~~ #whatisoptimization
+				{
+					case 'A':
+							La++;
+							break;
+					case 'B': 
+							Lb++;
+							break;
+					case 'C': 
+							Lc++;
+							break;
+					case 'D':
+							Ld++;
+							break;
+					case 'E':
+							Le++;
+							break;
+					case 'F':
+							Lf++;
+							break;
+					case 'G':
+							Lg++;
+							break;
+					case 'H':
+							Lh++;
+							break;
+					case 'I':
+							Li++;
+							break;
+					case 'J':
+							Lj++;
+							break;
+					case 'K':
+							Lk++;
+							break;
+					case 'L':
+							Ll++;
+							break;
+					case 'M':
+							Lm++;
+							break;
+					case 'N':
+							Ln++;
+							break;
+					case 'O':
+							Lo++;
+							break;
+					case 'P':
+							Lp++;
+							break;
+					case 'Q':
+							Lq++;
+							break;
+					case 'R':
+							Lr++;
+							break;
+					case 'S':
+							Ls++;
+							break;
+					case 'T':
+							Lt++;
+							break;
+					case 'U':
+							Lu++;
+							break;
+					case 'V':
+							Lv++;
+							break;
+					case 'W':
+							Lw++;
+							break;
+					case 'X':
+							Lx++;
+							break;
+					case 'Y':
+							Ly++;
+							break;
+					case 'Z':
+							Lz++;
+							break;
+					case '*':
+							star++;
+							break;
+					case '-':
+							dash++;	
+							break;
+				}
+		}
+		
+	
+
+	string aa_tab[28][2] =
+	 
+	{ 	  {"A", to_string(La)},  
+		  {"B", to_string(Lb)},
+		  {"C", to_string(Lc)},
+          {"D", to_string(Ld)},
+          {"E", to_string(Le)},
+		  {"F", to_string(Lf)},
+		  {"G", to_string(Lg)},
+		  {"H", to_string(Lh)},
+		  {"I", to_string(Li)},
+		  {"J", to_string(Lj)},
+		  {"K", to_string(Lk)},
+		  {"L", to_string(Ll)},
+		  {"M", to_string(Lm)},
+		  {"N", to_string(Ln)},
+		  {"O", to_string(Lo)},
+		  {"P", to_string(Lp)},
+		  {"Q", to_string(Lq)},
+		  {"R", to_string(Lr)},
+		  {"S", to_string(Ls)},
+		  {"T", to_string(Lt)},
+		  {"U", to_string(Lu)},
+		  {"V", to_string(Lv)},
+		  {"W", to_string(Lw)},
+		  {"X", to_string(Lx)},
+		  {"Y", to_string(Ly)},
+		  {"Z", to_string(Lz)},
+		  {"*", to_string(star)},
+		  {"-", to_string(dash)}
+		};
+		
+	for (int i = 0; i < 28; i++)
+	{
+		cout<< aa_tab[i][0] << " " << aa_tab[i][1] << endl;
+	}
+}
+
+
+void print_table(vector<prot_details>& table)     //┬──┬ ﻿ノ( ゜-゜ノ) table is printed
+{
+	for(int i = 0; i < table.size(); i++) 
+	{
+		cout << "The protein name is: " << table[i].prot_name << "]"<< endl;
+		cout << "The protein id is: " << to_string(table[i].item_id) << endl;
+	}
+
+}
+
+
+void keyword_search(vector<prot_details>& p_table,int nPosition)
+{
+	cout<<"Enter a keyword"<<endl;
+			int match_f=0;
+			int search_res;
+        	string key_in; 
+        	cin>>key_in;
+        	for(int i=0; i< p_table.size(); i++)
+        	{	
+				search_res = (p_table[i].prot_name).find(key_in);
+				if(search_res != string::npos)
+				{
+					 nPosition=i;
+					match_f++;
+					cout<< "Number of matches found: "<< match_f<<endl;
+					cout<< match_f<< ") "<< "item id: "<< p_table[nPosition].item_id << ", gi id: "<< p_table[nPosition].gi_id<< ", ref_id:" << p_table[nPosition].ref_id << endl;
+					cout<< p_table[nPosition].prot_name << "]"<< endl; 
+				}
+					
+        	}
+			
+ }
+       //   ＼＼\(۶•̀ᴗ•́)۶//／／ IT WORKS ✧٩(•́⌄•́๑)و ✧ 		
+
+
+string to_string(int value)  //as mingw does not recognise the function to_string, this function was created
+    {
+	stringstream ss;
+    ss<< value;
+    return ss.str();     //converts the string stream into a string and return
+	}
